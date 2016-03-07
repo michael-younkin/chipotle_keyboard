@@ -1,0 +1,7 @@
+[package]
+name = "chipotle_keyboard"
+version = "0.1.0"
+authors = ["Michael Blais Younkin <younkin.michael@gmail.com>"]
+
+[dependencies]
+glium = "*"
