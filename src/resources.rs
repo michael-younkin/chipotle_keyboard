@@ -8,67 +8,49 @@ use std::fmt;
 use std::error;
 use std::fs;
 
+/// The error type for operations performed by the ResourceManager.
 #[derive(Debug)]
-pub enum ResourceErrorKind {
-    IoError(io::Error),
-    ShaderCreationError(glium::program::ProgramCreationError)
-}
-
-impl fmt::Display for ResourceErrorKind {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        match self {
-            &ResourceErrorKind::IoError(ref err) =>
-                write!(f, "IO Error: {}", err),
-            &ResourceErrorKind::ShaderCreationError(ref err) =>
-                write!(f, "Shader creation error: {}", err)
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct ResourceError {
-    kind: ResourceErrorKind,
-    desc: String
+pub enum ResourceError {
+    /// The operation failed due to an IO related error.
+    Io(io::Error),
+    /// ResourceError::Shader program creation failed (at the glium/OpenGL level).
+    Shader(glium::program::ProgramCreationError)
 }
 
 impl error::Error for ResourceError {
     fn description(&self) -> &str {
-        &self.desc
+        match self {
+            &ResourceError::Io(ref err) => err.description(),
+            &ResourceError::Shader(ref err) => err.description()
+        }
     }
 
     fn cause(&self) -> Option<&error::Error> {
-        match &self.kind {
-            &ResourceErrorKind::IoError(ref err) => Some(err),
-            &ResourceErrorKind::ShaderCreationError(ref err) => Some(err)
+        match self {
+            &ResourceError::Io(ref err) => Some(err),
+            &ResourceError::Shader(ref err) => Some(err)
         }
     }
 }
 
 impl fmt::Display for ResourceError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        write!(f, "{}", self.desc)
-    }
-}
-
-impl From<io::Error> for ResourceError {
-    fn from(err: io::Error) -> Self {
-        let kind = ResourceErrorKind::IoError(err);
-        let desc = kind.to_string();
-        ResourceError {
-            kind: kind,
-            desc: desc
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &ResourceError::Io(ref err) => write!(f, "IO Error: {}", err),
+            &ResourceError::Shader(ref err) => write!(f, "Shader Error: {}", err)
         }
     }
 }
 
 impl From<glium::program::ProgramCreationError> for ResourceError {
-    fn from(err: glium::program::ProgramCreationError) -> Self {
-        let kind = ResourceErrorKind::ShaderCreationError(err);
-        let desc = kind.to_string();
-        ResourceError {
-            kind: kind,
-            desc: desc
-        }
+    fn from(e: glium::program::ProgramCreationError) -> Self {
+        ResourceError::Shader(e)
+    }
+}
+
+impl From<io::Error> for ResourceError {
+    fn from(e: io::Error) -> Self {
+        ResourceError::Io(e)
     }
 }
 
