@@ -148,14 +148,16 @@ impl Rect2D {
 #[derive(Copy, Clone, Debug)]
 struct ImmediateVertex {
     position: [f32; 2],
+    texcoords: [f32; 2]
 }
-implement_vertex!(ImmediateVertex, position);
+implement_vertex!(ImmediateVertex, position, texcoords);
 
 /// Immediate mode graphics API.
 pub struct ImmediateGraphics {
     vertex_buffer: glium::VertexBuffer<ImmediateVertex>,
     index_buffer: glium::IndexBuffer<u8>,
     color_shader: Rc<glium::Program>,
+    circle_color_shader: Rc<glium::Program>
 }
 
 impl ImmediateGraphics {
@@ -169,27 +171,53 @@ impl ImmediateGraphics {
                     gl_display, glium::index::PrimitiveType::TrianglesList, 6)),
             color_shader: try!(resource_manager.load_shader(
                     "identity_vertex_shader.glsl",
-                    "color_fragment_shader.glsl"))
+                    "color_fragment_shader.glsl")),
+            circle_color_shader: try!(resource_manager.load_shader(
+                    "identity_vertex_shader.glsl",
+                    "color_circle_fragment_shader.glsl")),
         })
+    }
+
+    fn setup_square_vertex_buffer(&self, dest: Rect2D) {
+        let buffer_contents = [
+            ImmediateVertex { position: [dest.left(), dest.top()], texcoords: [0.0, 1.0] },
+            ImmediateVertex { position: [dest.left(), dest.bottom()], texcoords: [0.0, 0.0] },
+            ImmediateVertex { position: [dest.right(), dest.bottom()], texcoords: [1.0, 0.0] },
+            ImmediateVertex { position: [dest.right(), dest.top()], texcoords: [1.0, 1.0] },
+        ];
+        self.vertex_buffer.write(&buffer_contents);
+    }
+
+    fn setup_square_index_buffer(&self) {
+        let buffer_contents: [u8; 6] = [0, 1, 2, 2, 3, 0];
+        self.index_buffer.write(&buffer_contents);
     }
 
     pub fn draw_square<T>(&self, target: &mut T, color: RGBAColor, dest: Rect2D)
             -> Result<(), GraphicsError>
             where T : glium::Surface {
-        let vertex_buffer = [
-            ImmediateVertex { position: [dest.left(), dest.top()] },
-            ImmediateVertex { position: [dest.left(), dest.bottom()] },
-            ImmediateVertex { position: [dest.right(), dest.bottom()] },
-            ImmediateVertex { position: [dest.right(), dest.top()] },
-        ];
-        self.vertex_buffer.write(&vertex_buffer);
-        let index_buffer: [u8; 6] = [0, 1, 2, 2, 3, 0];
-        self.index_buffer.write(&index_buffer);
+        self.setup_square_vertex_buffer(dest);
+        self.setup_square_index_buffer();
         let color_array: [f32; 4] = color.into();
         let uniforms = uniform! { tint: color_array };
         try!(target.draw(&self.vertex_buffer,
                          &self.index_buffer,
                          &self.color_shader,
+                         &uniforms,
+                         &Default::default()));
+        Ok(())
+    }
+
+    pub fn draw_circle<T>(&self, target: &mut T, color: RGBAColor, dest: Rect2D)
+            -> Result<(), GraphicsError>
+            where T : glium::Surface {
+        self.setup_square_vertex_buffer(dest);
+        self.setup_square_index_buffer();
+        let color_array: [f32; 4] = color.into();
+        let uniforms = uniform! { tint: color_array };
+        try!(target.draw(&self.vertex_buffer,
+                         &self.index_buffer,
+                         &self.circle_color_shader,
                          &uniforms,
                          &Default::default()));
         Ok(())

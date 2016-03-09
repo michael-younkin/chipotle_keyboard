@@ -45,8 +45,8 @@ fn main() {
         // Draw
         let mut target = display.draw();
         target.clear_color(100.0/255.0, 149.0/255.0, 237.0/255.0, 1.0);
-        graphics.draw_square(&mut target,
-                             graphics::RGBAColor::new(255,255,255,255),
+        graphics.draw_circle(&mut target,
+                             graphics::RGBAColor::new(0,0,255,255),
                              graphics::Rect2D::new(-0.5, -0.5, 1.0, 1.0)).unwrap();
         target.finish().unwrap();
     }
