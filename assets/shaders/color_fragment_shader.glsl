@@ -1,7 +1,8 @@
 #version 140
 
+uniform vec4 tint;
 out vec4 color;
 
 void main() {
-    color = vec4(1.0, 0.0, 0.0, 1.0);
+    color = tint;
 }

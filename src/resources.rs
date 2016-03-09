@@ -69,14 +69,16 @@ impl<'a> ResourceManager<'a> {
 
     pub fn load_shader(&mut self, vertex_shader: &str, fragment_shader: &str)
             -> Result<Rc<glium::Program>, ResourceError> {
-        let cache_key = (vertex_shader.to_string(), fragment_shader.to_string());
+        let vertex_shader_fname = "assets/shaders/".to_string() + vertex_shader;
+        let fragment_shader_fname = "assets/shaders/".to_string() + fragment_shader;
 
+        let cache_key = (vertex_shader_fname.clone(), fragment_shader_fname.clone());
         if let Some(program) = self.shader_cache.get(&cache_key) {
             return Ok(program.clone())
         }
 
-        let vertex_src = try!(read_file(vertex_shader));
-        let fragment_src = try!(read_file(fragment_shader));
+        let vertex_src = try!(read_file(&vertex_shader_fname));
+        let fragment_src = try!(read_file(&fragment_shader_fname));
         let program = Rc::new(
             try!(glium::Program::from_source(self.gl_display, &vertex_src, &fragment_src, None)));
         self.shader_cache.insert(cache_key, program.clone());
